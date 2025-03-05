@@ -1,0 +1,34 @@
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.10-slim AS builder
+
+WORKDIR /backend
+
+### install chrome
+RUN apt-get update && apt-get install -y wget && apt-get install -y zip
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+RUN apt-get install -y ./google-chrome-stable_current_amd64.deb
+RUN google-chrome --version
+
+# install webdriver
+ENV CHROMEDRIVER_VERSION=131.0.6778.87
+RUN CHROME_VERSION=$(google-chrome --version) \
+  && wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip \
+  && unzip chromedriver-linux64.zip && rm -dfr chromedriver_linux64.zip \
+  && mv chromedriver-linux64/chromedriver /usr/bin/chromedriver \
+  && chmod +x /usr/bin/chromedriver
+
+
+
+# install backend deps
+COPY requirements.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt
+
+COPY . ./
+
+ENV DATABASE_URL="postgresql+asyncpg://mb-trff24-user:mb-trff24-password@postgres:5432/mb-trff24-db"
+ENV INSTAGRAM_SCORE_URL=""
+ENV INSTAGRAM_MULTIPROMPT=""
+ENV FACEBOOK_SCORE_URL=""
+ENV FACEBOOK_MULTIPROMPT=""
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7899", "--workers", "4"]

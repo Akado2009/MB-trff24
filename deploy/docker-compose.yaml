@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  backend:
+    image: mb-trff24-backend:latest
+    ports:
+      - "7899:7899"
+    networks:
+      - my_network
+    volumes:
+    # wrong path, it is relative to deploy folder..
+      # - /DATA_FOLDER/:/backend/data
+      - /var/log/social:/var/log/social
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=mb-trff24-password
+      - POSTGRES_USER=mb-trff24-user
+      - POSTGRES_DB=mb-trff24-db
+    networks:
+      - my_network
+networks:
+  my_network:
